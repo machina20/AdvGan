@@ -37,7 +37,6 @@ loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 # set up the optimizers and loss for the models
 opt_disc = optim.Adam(disc.parameters(), lr=lr)
 opt_gen = optim.Adam(gen.parameters(), lr=lr)
-BCE_loss = nn.BCELoss() 
 CE_loss = nn.CrossEntropyLoss()
 
 for epoch in range(num_epochs):
