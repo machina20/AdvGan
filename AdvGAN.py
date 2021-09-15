@@ -40,11 +40,6 @@ opt_gen = optim.Adam(gen.parameters(), lr=lr)
 BCE_loss = nn.BCELoss() 
 CE_loss = nn.CrossEntropyLoss()
 
-#summarywriter for tensorboard display
-writer_fake = SummaryWriter(f"runs/AdvGAN_MNIST/A/fake")
-writer_real = SummaryWriter(f"runs/AdvGAN_MNIST/A/real")
-step = 0
-
 for epoch in range(num_epochs):
     for batch_idx, (real, labels) in enumerate(loader):
         #get a fixed input batch to display gen output
@@ -57,28 +52,28 @@ for epoch in range(num_epochs):
         labels = labels.to(device) # size() [32]
         #make a copy of this batch to make examples
         #purturb each image in adv_ex
-        with torch.autograd.set_detect_anomaly(True):    
-            for idx,item in enumerate(adv_ex):
-                #item.size() = 784
-                purturbation = gen(adv_ex[idx])
-                adv_ex[idx] = adv_ex[idx] + purturbation #item.size() = 784   
+           
+        for idx,item in enumerate(adv_ex):
+            #item.size() = 784
+            purturbation = gen(adv_ex[idx])
+            adv_ex[idx] = adv_ex[idx] + purturbation #item.size() = 784   
 
-                ### Train Generator: min log(1 - D(G(z))) <-> max log(D(G(z))
-            # where the second option of maximizing doesn't suffer from
-            # saturating gradients
-            output = disc(adv_ex).view(-1)
-            lossG = torch.mean(torch.log(1. - output)) #get loss for gen's desired desc pred
+            ### Train Generator: min log(1 - D(G(z))) <-> max log(D(G(z))
+        # where the second option of maximizing doesn't suffer from
+        # saturating gradients
+        output = disc(adv_ex).view(-1)
+        lossG = torch.mean(torch.log(1. - output)) #get loss for gen's desired desc pred
 
-            adv_ex = adv_ex.reshape(-1,1,28,28)
-            f_pred = target(adv_ex)
-            f_loss = CE_loss(f_pred, labels) #add loss for gens desired f pred
-            loss_G_Final = f_loss+lossG # can change the weight of this loss term later
-            
-            opt_gen.zero_grad()
-            loss_G_Final.backward()
-            opt_gen.step()
-        
-    
+        adv_ex = adv_ex.reshape(-1,1,28,28)
+        f_pred = target(adv_ex)
+        f_loss = CE_loss(f_pred, labels) #add loss for gens desired f pred
+        loss_G_Final = f_loss+lossG # can change the weight of this loss term later
+
+        opt_gen.zero_grad()
+        loss_G_Final.backward()
+        opt_gen.step()
+
+
     
         ### Train Discriminator: max log(D(x)) + log(1 - D(G(z)))    
         disc_real = disc(real).view(-1)
@@ -97,23 +92,6 @@ for epoch in range(num_epochs):
                       Loss D: {lossD:.4f}, loss G: {lossG:.4f}"
             )
 
-            with torch.no_grad():
-                for item in fixed_input:
-                    item = item.reshape(-1,28*28)
-                    item += gen(item)* 0.4
-                    item = item.reshape(-1,1,28,28)
-                fixed_input = fixed_input.reshape(-1, 1, 28, 28)
-                data = real.reshape(-1, 1, 28, 28)
-                img_grid_fake = torchvision.utils.make_grid(fixed_input, normalize=True)
-                img_grid_real = torchvision.utils.make_grid(data, normalize=True)
-
-                writer_fake.add_image(
-                    "Mnist Fake Images", img_grid_fake, global_step=step
-                )
-                writer_real.add_image(
-                    "Mnist Real Images", img_grid_real, global_step=step
-                )
-                step += 1
                 
 torch.save(disc.state_dict(), "./disc_dict")
 torch.save(gen.state_dict(), "./gen_dict")
