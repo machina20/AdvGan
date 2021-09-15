@@ -57,7 +57,7 @@ for epoch in range(num_epochs):
             purturbation = gen(adv_ex[idx])
             adv_ex[idx] = adv_ex[idx] + purturbation #item.size() = 784   
 
-            ### Train Generator: min log(1 - D(G(z))) <-> max log(D(G(z))
+        # Train Generator: min log(1 - D(G(z)))
         # where the second option of maximizing doesn't suffer from
         # saturating gradients
         output = disc(adv_ex).view(-1)
@@ -74,7 +74,7 @@ for epoch in range(num_epochs):
 
 
     
-        ### Train Discriminator: max log(D(x)) + log(1 - D(G(z)))    
+        # Train Discriminator: max log(D(x)) + log(1 - D(G(x) + x))    
         disc_real = disc(real).view(-1)
         disc_fake = disc(adv_ex.detach()).view(-1)
         lossD = -torch.mean(torch.log(disc(real)) + torch.log(1. - disc(adv_ex)))
